@@ -2,6 +2,7 @@ import os
 from dotenv import load_dotenv
 import streamlit as st
 import pprint
+import sys
 
 
 from langchain.memory import ChatMessageHistory
@@ -22,6 +23,13 @@ from bs4 import BeautifulSoup
 import requests
 import json
 from fastapi import FastAPI
+import slack_sdk
+
+import ssl
+import certifi
+
+ssl_context = ssl.create_default_context(cafile=certifi.where())
+
 
 load_dotenv()
 brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
@@ -52,6 +60,14 @@ def search(query):
 
 # 2. Tool for scraping
 def scrape_website(objective: str, url: str):
+    slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+    client_paul = slack_sdk.WebClient(token=slack_token_paul)
+
+    msg="I'm reading this : "+str(url)
+    print(msg)
+    client_paul.chat_postMessage(
+    channel="C0645TGK2DR", text=f"{msg}")
+    
     print("Here scrape_website")
     # scrape website, and also will summarize the content based on objective if the content is too large
     # objective is the original objective & task that user give to the agent, url is the url of the website to be scraped
@@ -69,7 +85,7 @@ def scrape_website(objective: str, url: str):
     }
     # Convert Python object to JSON string
     data_json = json.dumps(data)
-
+    
     urls.append(url)
 
     # Send the POST request
@@ -151,15 +167,14 @@ tools = [
 
 system_message = SystemMessage(
     content="""You are a world class researcher, who can produce deep dive analyses of any given topic; 
-            you do not make things up, you will try as hard as possible to gather facts & data by scraping articles and links  !
+            you do not make things up, you will try as hard as possible to gather facts & data by scraping articles and links !
             
             Please make sure you complete the objective above with the following rules:
             1/ You should do enough research to gather as much information as possible about the objective
             2/ You select a few links and articles and you will scrape it to gather more information, this is important in order to give deep insightful analyses and not just verbose.
-            3/ After scraping & search, you should think "is there any new things i should search & scraping based on the data I collected to increase research quality?" If answer is yes, continue; But don't do this more than 3 iteratins
-            4/ You should not make things up, you should only write facts & data that you have gathered
-            5/ Assume you are talking to someone smart. Do deep analyses of the articles you read by scraping them and try to be insightful without doing verbose
-            6/ Assume you are talking to someone smart. Do deep analyses of the articles you read by scraping them and try to be insightful without doing verbose"""
+            3/ You should not make things up, you should only write facts & data that you have gathered
+            4/ Assume you are talking to someone smart. Do deep analyses of the articles you read by scraping them and try to be insightful without doing verbose
+            5/ Assume you are talking to someone smart. Do deep analyses of the articles you read by scraping them and try to be insightful without doing verbose"""
 )
 
 agent_kwargs = {
@@ -167,7 +182,7 @@ agent_kwargs = {
     "system_message": system_message,
 }
 
-llm = ChatOpenAI(temperature=0, model="gpt-4")
+llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo-16k-0613")
 #"gpt-3.5-turbo-16k-0613"
 memory = ConversationSummaryBufferMemory(
     memory_key="memory", return_messages=True, llm=llm, max_token_limit=1000)
@@ -213,25 +228,23 @@ Use it to generate a concise but value-packed LinkedIn post from the following c
 
 
 # 4. Use streamlit to create a web app
-def main():
-    st.set_page_config(page_title="AI research agent", page_icon=":bird:")
+def main(query):
+    slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+    client_paul = slack_sdk.WebClient(token=slack_token_paul)
 
-    st.header("AI research agent :bird:")
-    query = st.text_input("Research goal")
+    result = agent({"input": query})
 
-    if query:
-        st.write("Doing research for ", query)
+    final=paul(result['output'])
 
-        result = agent({"input": query})
-        print(urls)
-
-        final=paul(result['output'])
-
-        st.info(final)
-
+    client_paul.chat_postMessage(
+        channel="C0645TGK2DR", text=f"{final}")
+    
 
 if __name__ == '__main__':
-    main()
+    if len(sys.argv) < 2:
+        print("Usage: python app.py <research_goal>")
+    else:
+        main(sys.argv[1])
 
 
 # 5. Set this as an API endpoint via FastAPI
@@ -248,3 +261,11 @@ def researchAgent(query: Query):
     content = agent({"input": query})
     actual_content = content['output']
     return actual_content
+
+# def log_and_print_online(role, content=None):
+#     slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+#     client_paul = slack_sdk.WebClient(token=slack_token_paul)
+
+#     client_paul.chat_postMessage(
+#     channel="C0645TGK2DR", text=f"{content}")
+
