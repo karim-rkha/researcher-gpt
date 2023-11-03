@@ -36,6 +36,7 @@ brwoserless_api_key = os.getenv("BROWSERLESS_API_KEY")
 serper_api_key = os.getenv("SERP_API_KEY")
 
 
+
 urls=[]
 
 # 1. Tool for search
@@ -60,7 +61,7 @@ def search(query):
 
 # 2. Tool for scraping
 def scrape_website(objective: str, url: str):
-    slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+    slack_token_paul = os.getenv("TOKEN_PAUL")  # Make sure to replace this with your actual token.
     client_paul = slack_sdk.WebClient(token=slack_token_paul)
 
     msg="I'm reading this : "+str(url)
@@ -229,7 +230,7 @@ Use it to generate a concise but value-packed LinkedIn post from the following c
 
 # 4. Use streamlit to create a web app
 def main(query):
-    slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+    slack_token_paul =  os.getenv("TOKEN_PAUL")  # Make sure to replace this with your actual token.
     client_paul = slack_sdk.WebClient(token=slack_token_paul)
 
     result = agent({"input": query})
@@ -263,7 +264,7 @@ def researchAgent(query: Query):
     return actual_content
 
 # def log_and_print_online(role, content=None):
-#     slack_token_paul = "xoxb-6131557495012-6135383978230-HBelSZGQdYaCDh2Zlf0qERbE"  # Make sure to replace this with your actual token.
+#     slack_token_paul =  os.getenv("TOKEN_PAUL")  # Make sure to replace this with your actual token.
 #     client_paul = slack_sdk.WebClient(token=slack_token_paul)
 
 #     client_paul.chat_postMessage(
